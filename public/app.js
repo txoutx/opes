@@ -244,7 +244,6 @@ function renderResults(data) {
       <strong>${index + 1}. ${escapeHtml(r.prompt)}</strong>
       <span>Tu respuesta: ${formatAnswer(r.selected, r.options)}</span>
       <span>Respuesta correcta: ${formatAnswer(r.correctAnswer, r.options)}</span>
-      <span class="meta">${escapeHtml(r.explanation || "")}</span>
     </div>
   `).join("");
   window.scrollTo({ top: $("#resultPanel").offsetTop - 12, behavior: "smooth" });

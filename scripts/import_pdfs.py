@@ -143,13 +143,6 @@ def infer_topic(prompt):
     return "General"
 
 
-def explanation(correct_key, options):
-    correct = normalize(options.get(correct_key, ""))
-    if not correct:
-        return "La respuesta correcta es la opcion indicada en el PDF original."
-    return f"Es la correcta porque el enunciado se resuelve con: {correct[:220]}."
-
-
 def as_question(bank, number, prompt, options, correct):
     options = {k: normalize(v) for k, v in options.items() if normalize(v)}
     if len(options) < 2 or correct not in options:
@@ -168,7 +161,6 @@ def as_question(bank, number, prompt, options, correct):
         "prompt": prompt,
         "options": options,
         "correctAnswer": correct,
-        "explanation": explanation(correct, options),
     }
 
 

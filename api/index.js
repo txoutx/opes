@@ -500,7 +500,6 @@ async function handler(req, res) {
           selected,
           correctAnswer: q.correctAnswer,
           correct: selected === q.correctAnswer,
-          explanation: q.explanation,
           prompt: q.prompt,
           options: q.options
         };
