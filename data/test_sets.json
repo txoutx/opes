@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-29T13:13:53.153264+00:00",
+  "generatedAt": "2026-06-29T13:36:27.563692+00:00",
   "oppositions": [
     {
       "id": "tec-sup-economico",
@@ -5118,7 +5118,7 @@
             "9c3c2d908b3ddcaa",
             "4a57d9b00b37bf2f",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "5d324a117eb6cd61",
             "fd55f4d3dbcc71db",
             "efbf89ce92cbbfc4",
@@ -6138,7 +6138,7 @@
             "2bd7b6e958376beb",
             "8727b57b6b504287",
             "4ba1e144629ff168",
-            "93a5087a9a6c76f8"
+            "62ad1192e909dc4b"
           ]
         },
         {
@@ -6597,7 +6597,7 @@
           "questionIds": [
             "577c54a0fefe6ddf",
             "f3d222ec298b64c5",
-            "93a5087a9a6c76f8",
+            "62ad1192e909dc4b",
             "165a0ca5090ec169",
             "07aee21f3c409c2c",
             "d752953a6b79c2f0",
@@ -6711,7 +6711,7 @@
             "7a3eda5374eb16ea",
             "ba5672cc17641191",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "1be19ec1418fecb0",
             "fd55f4d3dbcc71db",
             "ba7e425244dd06e6",
@@ -6745,7 +6745,7 @@
             "7a3eda5374eb16ea",
             "ba5672cc17641191",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "2ecf1e1ab51d9dc3",
             "fd55f4d3dbcc71db",
             "23c2cb7b9bfaa548",
@@ -7179,7 +7179,7 @@
             "9c3c2d908b3ddcaa",
             "4a57d9b00b37bf2f",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "95ad925a734b4a66",
             "fd55f4d3dbcc71db",
             "ba7e425244dd06e6",
@@ -7371,7 +7371,7 @@
             "9c3c2d908b3ddcaa",
             "ba5672cc17641191",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "2ecf1e1ab51d9dc3",
             "fd55f4d3dbcc71db",
             "23c2cb7b9bfaa548",
@@ -7496,7 +7496,7 @@
             "9c3c2d908b3ddcaa",
             "4a57d9b00b37bf2f",
             "9b190cb74bc2de3a",
-            "e5c03ccde295ddf2",
+            "7c3c872d3bd7d957",
             "971176f973e3e060",
             "fd55f4d3dbcc71db",
             "efbf89ce92cbbfc4",
@@ -15039,7 +15039,7 @@
             "fa96a2dfbe806725",
             "3ba459146638213b",
             "fa96a2dfbe806725",
-            "172ee328870e57c9",
+            "787f80038d39511a",
             "fa96a2dfbe806725",
             "08bdcac7aea6ff26",
             "fa96a2dfbe806725",
@@ -15089,7 +15089,7 @@
           "mode": "exam",
           "title": "Simulacro 07",
           "questionIds": [
-            "172ee328870e57c9",
+            "787f80038d39511a",
             "fa96a2dfbe806725",
             "721631a7d8e1cca7",
             "fa96a2dfbe806725",

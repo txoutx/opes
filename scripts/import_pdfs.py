@@ -69,7 +69,13 @@ BANKS = [
 
 
 def normalize(text):
-    return re.sub(r"\s+", " ", text.replace("\ufb01", "fi").replace("\ufb02", "fl")).strip()
+    text = text.replace("\ufb01", "fi").replace("\ufb02", "fl")
+    text = re.sub(r"EncumplimientodelReglamento.*$", "", text, flags=re.I | re.S)
+    text = re.sub(r"PREGUNTAS\s+(?:BATERIA|TIPO|SUPUESTOS).*$", "", text, flags=re.I | re.S)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"([.!?;:])\s+[a-z]$", r"\1", text)
+    text = re.sub(r"\.\s+\.$", ".", text)
+    return text.strip()
 
 
 def edit_distance(a, b):
