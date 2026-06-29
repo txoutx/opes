@@ -27,6 +27,16 @@ function hasDatabase() {
   return Boolean(process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING);
 }
 
+function canUseLocalFiles() {
+  return !hasDatabase() && !process.env.VERCEL;
+}
+
+function requireStorage() {
+  if (!hasDatabase() && process.env.VERCEL) {
+    throw new Error("Falta configurar Vercel Postgres. Crea una base de datos Postgres y añade POSTGRES_URL al proyecto.");
+  }
+}
+
 async function sql() {
   if (!sqlClient) {
     const mod = await import("@vercel/postgres");
@@ -67,8 +77,10 @@ async function ensureSchema() {
 function ensureLocalFiles() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(FILES.questions)) writeJson(FILES.questions, { importedAt: null, banks: [], questions: [] });
-  if (!fs.existsSync(FILES.users)) writeJson(FILES.users, []);
-  if (!fs.existsSync(FILES.attempts)) writeJson(FILES.attempts, []);
+  if (canUseLocalFiles()) {
+    if (!fs.existsSync(FILES.users)) writeJson(FILES.users, []);
+    if (!fs.existsSync(FILES.attempts)) writeJson(FILES.attempts, []);
+  }
 }
 
 function readJson(file) {
@@ -158,6 +170,7 @@ function rowToAttempt(row) {
 }
 
 async function findUserById(id) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
@@ -168,6 +181,7 @@ async function findUserById(id) {
 }
 
 async function findUserByUsername(username) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
@@ -178,6 +192,7 @@ async function findUserByUsername(username) {
 }
 
 async function createUser(username, password) {
+  requireStorage();
   const user = {
     id: crypto.randomUUID(),
     username,
@@ -201,6 +216,7 @@ async function createUser(username, password) {
 }
 
 async function getAttempts(userId) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
@@ -211,6 +227,7 @@ async function getAttempts(userId) {
 }
 
 async function findAttempt(userId, attemptId) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
@@ -221,6 +238,7 @@ async function findAttempt(userId, attemptId) {
 }
 
 async function saveAttempt(attempt) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
@@ -236,6 +254,7 @@ async function saveAttempt(attempt) {
 }
 
 async function completeAttempt(attempt) {
+  requireStorage();
   await ensureSchema();
   if (hasDatabase()) {
     const db = await sql();
