@@ -14,7 +14,7 @@ const FILES = {
 const OPPOSITIONS = [
   { id: "tec-sup-economico", name: "Tecnico/a Superior Economico/a", banks: ["tec-sup-economico"] },
   { id: "tec-sup-organizacion", name: "Tecnico/a Superior Organizacion", banks: ["tec-sup-organizacion"] },
-  { id: "tec-medio-admin-gestion", name: "Tecnico/a Medio Administracion y Gestion", banks: ["tec-admin-gestion"] },
+  { id: "tec-medio-admin-gestion", name: "Tecnico/a Superior Administracion y Gestion", banks: ["tec-admin-gestion"] },
   { id: "tec-sup-informatica", name: "Tecnico/a Superior Informatica", banks: ["tec-sup-informatica"] },
   { id: "tec-esp-informatica", name: "Tecnico/a Especialista Informatica", banks: ["tec-esp-informatica"] },
   { id: "comun-a-bc1", name: "Comun A-BC1", banks: ["comun-a-bc1"] },

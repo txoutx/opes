@@ -24,6 +24,13 @@ BANKS = [
         "file": "RESPUESTAS-T.-COMUN-C2-C3-D-Y-E.json",
         "expected": 300,
     },
+    {
+        "id": "tec-admin-gestion",
+        "opposition_id": "tec-medio-admin-gestion",
+        "name": "Tecnico/a Superior Administracion y Gestion",
+        "file": "preguntas_respuestas_tecnico_superior_administracion_gestion_450.json",
+        "expected": 450,
+    },
 ]
 
 
@@ -48,7 +55,21 @@ def read_items(path):
 def correct_key(value):
     if isinstance(value, dict):
         value = value.get("letra", "")
-    return normalize(value).lower()
+    return normalize(value).lower().split("/")[0]
+
+
+def normalize_split_answer_options(options, raw_correct):
+    if not isinstance(raw_correct, dict) or "/" not in normalize(raw_correct.get("letra", "")):
+        return options
+    keys = [part.strip().lower() for part in normalize(raw_correct.get("letra", "")).split("/") if part.strip()]
+    if len(keys) < 2 or keys[0] not in options:
+        return options
+    merged = dict(options)
+    for key in keys[1:]:
+        if key in merged:
+            merged[keys[0]] = normalize(f"{merged[keys[0]]} {merged[key]}")
+            del merged[key]
+    return merged
 
 
 def import_bank(bank):
@@ -63,7 +84,9 @@ def import_bank(bank):
             for key, value in (item.get("opciones") or {}).items()
             if normalize(value)
         }
-        correct = correct_key(item.get("respuesta_correcta"))
+        raw_correct = item.get("respuesta_correcta")
+        options = normalize_split_answer_options(options, raw_correct)
+        correct = correct_key(raw_correct)
         if len(options) < 2 or correct not in options:
             raise ValueError(f"Pregunta invalida {bank['id']} #{number}")
         questions.append({
@@ -116,26 +139,27 @@ def build_test_sets(all_questions):
         "oppositions": [],
     }
     for bank in BANKS:
+        set_id = bank.get("opposition_id", bank["id"])
         pool = [q for q in all_questions if q["bankId"] == bank["id"]]
         sets = []
         for number in range(1, 61):
             sets.append({
-                "id": f"{bank['id']}-test-{number:02d}",
+                "id": f"{set_id}-test-{number:02d}",
                 "number": number,
                 "mode": "test",
                 "title": f"Test {number:02d}",
-                "questionIds": make_set(pool, 20, f"{bank['id']}:test:{number}"),
+                "questionIds": make_set(pool, 20, f"{set_id}:test:{number}"),
             })
         for number in range(1, 9):
             sets.append({
-                "id": f"{bank['id']}-exam-{number:02d}",
+                "id": f"{set_id}-exam-{number:02d}",
                 "number": number,
                 "mode": "exam",
                 "title": f"Simulacro {number:02d}",
-                "questionIds": make_set(pool, 100, f"{bank['id']}:exam:{number}"),
+                "questionIds": make_set(pool, 100, f"{set_id}:exam:{number}"),
             })
         output["oppositions"].append({
-            "id": bank["id"],
+            "id": set_id,
             "name": bank["name"],
             "sets": sets,
         })
