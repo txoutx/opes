@@ -21,48 +21,102 @@ BANKS = [
         "name": "Comun A-BC1",
         "file": "RESPUESTAS-T.-COMUN-A-BC1.pdf",
         "mode": "inline",
+        "expected": 200,
     },
     {
         "id": "comun-c2-c3-d-e",
         "name": "Comun C2-C3-D-E",
         "file": "RESPUESTAS-T.-COMUN-C2-C3-D-Y-E.pdf",
         "mode": "inline",
+        "expected": 300,
     },
     {
         "id": "tec-admin-gestion",
         "name": "Tecnico/a Medio Administracion y Gestion",
         "file": "RESPUESTAS-T.-ESPECIFICO-SUPUESTOS-PRACTICOS-TECNICOA-SUPERIOR-DE-ADMINISTRACION-Y-GESTION.pdf",
         "mode": "inline",
+        "expected": 500,
     },
     {
         "id": "tec-esp-informatica",
         "name": "Tecnico/a Especialista Informatica",
         "file": "TEC_ESP_INFORMATICA_respuestas_marcadas.pdf",
         "mode": "marked",
+        "expected": 200,
     },
     {
         "id": "tec-sup-informatica",
         "name": "Tecnico/a Superior Informatica",
         "file": "TEC_SUPERIOR_INFORMATICA_respuestas_marcadas.pdf",
         "mode": "marked",
+        "expected": 500,
     },
     {
         "id": "tec-sup-organizacion",
         "name": "Tecnico/a Superior Organizacion",
         "file": "TEC_SUP_ORGANIZACION_respuestas_marcadas.pdf",
         "mode": "marked",
+        "expected": 500,
     },
     {
         "id": "tec-sup-economico",
         "name": "Tecnico/a Superior Economico/a",
         "file": "TEC_SUP_ECONOMICO_respuestas_marcadas.pdf",
         "mode": "marked",
+        "expected": 500,
     },
 ]
 
 
 def normalize(text):
     return re.sub(r"\s+", " ", text.replace("\ufb01", "fi").replace("\ufb02", "fl")).strip()
+
+
+def edit_distance(a, b):
+    previous = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        current = [i]
+        for j, cb in enumerate(b, 1):
+            current.append(min(
+                previous[j] + 1,
+                current[j - 1] + 1,
+                previous[j - 1] + (ca != cb),
+            ))
+        previous = current
+    return previous[-1]
+
+
+def marker_text(value):
+    return re.sub(r"[^a-z]", "", value.lower())
+
+
+def read_number(value):
+    digits = re.sub(r"\D", "", value)
+    return int(digits) if digits else -1
+
+
+def is_correct_marker(raw_text):
+    for match in re.finditer(r"\(([^)]{1,50})\)", raw_text, flags=re.I | re.S):
+        marker = marker_text(match.group(1))
+        if marker.startswith("in"):
+            continue
+        if "correcta" in marker or edit_distance(marker, "correcta") <= 2:
+            return True
+    return False
+
+
+def strip_answer_markers(raw_text):
+    def replace(match):
+        marker = marker_text(match.group(1))
+        if marker.startswith("in") or "correcta" in marker or edit_distance(marker, "correcta") <= 2:
+            return ""
+        return match.group(0)
+
+    return re.sub(r"\(([^)]{1,50})\)", replace, raw_text, flags=re.I | re.S)
+
+
+def strip_visual_mark(raw_text):
+    return re.sub(r"^(?:[✓✔·•]\s*|>>\s*)+", "", raw_text).strip()
 
 
 def question_id(bank_id, number, prompt):
@@ -101,7 +155,7 @@ def as_question(bank, number, prompt, options, correct):
     if len(options) < 2 or correct not in options:
         return None
     prompt = normalize(prompt)
-    if len(prompt) < 12:
+    if len(prompt) < 5:
         return None
     topic = infer_topic(prompt)
     return {
@@ -119,17 +173,18 @@ def as_question(bank, number, prompt, options, correct):
 
 
 def parse_inline(bank, text):
+    expected = bank.get("expected", 9999)
     text = text.replace("\r", "\n")
     text = re.sub(r"\n{3,}", "\n\n", text)
-    question_re = re.compile(r"(?m)^\s*(\d{1,4})[.\-]\s+")
-    matches = list(question_re.finditer(text))
+    question_re = re.compile(r"(?m)^\s*([a-z]?\d(?:[a-z]?\d){0,3}[a-z]?)\s*[.\-]\s*(?!\d)[a-z]?\s*")
+    matches = [match for match in question_re.finditer(text) if 1 <= read_number(match.group(1)) <= expected]
     questions = []
     for idx, match in enumerate(matches):
         start = match.end()
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
-        number = int(match.group(1))
+        number = read_number(match.group(1))
         block = text[start:end]
-        opt_re = re.compile(r"(?is)(?:^|\n)\s*\(?([abcd])\)\s*(.*?)(?=(?:\n\s*\(?[abcd]\)\s*)|\Z)")
+        opt_re = re.compile(r"(?is)(?:^|\n)\s*[a-z@.-]?\s*\(?\s*([abcd])\s*[a-z]?\)\s*(.*?)(?=(?:\n\s*[a-z@.-]?\s*\(?\s*[abcd]\s*[a-z]?\)\s*)|\Z)")
         opts = list(opt_re.finditer(block))
         if len(opts) < 2:
             continue
@@ -138,9 +193,9 @@ def parse_inline(bank, text):
         correct = None
         for opt in opts:
             key = opt.group(1).lower()
-            value = normalize(re.sub(r"\(\s*(?:In)?Correcta\s*\)", "", opt.group(2), flags=re.I))
+            value = normalize(strip_answer_markers(opt.group(2)))
             options[key] = value
-            if re.search(r"\(\s*Correcta\s*\)", opt.group(2), flags=re.I):
+            if is_correct_marker(opt.group(2)):
                 correct = key
         q = as_question(bank, number, prompt, options, correct)
         if q:
@@ -175,31 +230,41 @@ def page_lines(page):
 
 
 def parse_marked(bank, pdf):
+    expected = bank.get("expected", 9999)
     blocks = []
     current = None
     option_re = re.compile(r"^([abcd])\)\s*(.*)", re.I)
-    question_re = re.compile(r"^(\d{1,4})\s*(?:\.|-|\.-)\s*(.*)")
+    question_re = re.compile(r"^([a-z]?\d(?:[a-z]?\d){0,3}[a-z]?)\s*(?:\.-|\.|-)\s*(?!\d)(.*)")
 
     for page in pdf.pages:
+        previous_top = None
         for line in page_lines(page):
             text = normalize(line["text"])
             if not text:
                 continue
+            line_top = line["top"]
+            line_gap = 999 if previous_top is None else line_top - previous_top
+            previous_top = line_top
             match = question_re.match(text)
             if match:
-                if current:
-                    blocks.append(current)
-                current = {
-                    "number": int(match.group(1)),
-                    "prompt": [match.group(2)],
-                    "options": {},
-                    "correct": None,
-                    "last_option": None,
-                }
-                continue
+                number = read_number(match.group(1))
+                starter = normalize(match.group(2))
+                has_prompt = len(starter) >= 4 and re.search(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ¿]", starter)
+                standalone_prompt_start = not starter and line_gap >= 18
+                if 1 <= number <= expected and (has_prompt or standalone_prompt_start):
+                    if current:
+                        blocks.append(current)
+                    current = {
+                        "number": number,
+                        "prompt": [starter] if starter else [],
+                        "options": {},
+                        "correct": None,
+                        "last_option": None,
+                    }
+                    continue
             if not current:
                 continue
-            option = option_re.match(text.replace("✓ ", "").replace(">> ", "").replace("· ", "").replace("• ", ""))
+            option = option_re.match(strip_visual_mark(text))
             if option:
                 key = option.group(1).lower()
                 current["options"][key] = option.group(2)
@@ -211,6 +276,11 @@ def parse_marked(bank, pdf):
                 option_words = [w for w in line["words"] if re.match(r"^[abcd]\)$", w["text"], re.I)]
                 if option_words:
                     current["correct"] = option_words[0]["text"][0].lower()
+                elif current["last_option"]:
+                    current["correct"] = current["last_option"]
+                    continuation = strip_visual_mark(text)
+                    if continuation:
+                        current["options"][current["last_option"]] += " " + continuation
                 continue
             if current["last_option"]:
                 current["options"][current["last_option"]] += " " + text
