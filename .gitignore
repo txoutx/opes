@@ -1,0 +1,5 @@
+data/users.json
+data/attempts.json
+*.log
+.env
+node_modules/

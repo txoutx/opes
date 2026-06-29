@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OPOWEB</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="auth" id="authView">
+        <div>
+          <p class="eyebrow">Oposiciones Osakidetza</p>
+          <h1>OPOWEB</h1>
+          <p class="lead">Tests de 20 preguntas, simulacros de 100 y repaso automatico de fallos por usuario.</p>
+        </div>
+        <form id="authForm" class="panel">
+          <div class="tabs">
+            <button type="button" class="tab active" data-auth-mode="login">Entrar</button>
+            <button type="button" class="tab" data-auth-mode="register">Registrarse</button>
+          </div>
+          <label>Usuario<input id="username" autocomplete="username" required></label>
+          <label>Contrasena<input id="password" type="password" autocomplete="current-password" required></label>
+          <button class="primary" type="submit">Continuar</button>
+          <p class="message" id="authMessage"></p>
+        </form>
+      </section>
+
+      <section class="app hidden" id="appView">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Panel de entrenamiento</p>
+            <h1>OPOWEB</h1>
+          </div>
+          <div class="userbar">
+            <span id="currentUser"></span>
+            <button id="logoutBtn" class="ghost">Salir</button>
+          </div>
+        </header>
+
+        <section class="controls">
+          <label>Oposicion<select id="oppositionSelect"></select></label>
+          <div class="actions">
+            <button id="startTestBtn" class="primary">Test 20</button>
+            <button id="startExamBtn">Simulacro 100</button>
+            <button id="startMistakesBtn">Test de fallos</button>
+          </div>
+        </section>
+
+        <section class="grid">
+          <article class="panel">
+            <h2>Evaluador por tema</h2>
+            <div id="statsList" class="stats"></div>
+          </article>
+          <article class="panel">
+            <h2>Ultimos resultados</h2>
+            <div id="attemptList" class="attempts"></div>
+          </article>
+        </section>
+
+        <section id="testPanel" class="test hidden">
+          <div class="testHead">
+            <div>
+              <p class="eyebrow" id="testMode"></p>
+              <h2 id="testTitle">Test</h2>
+            </div>
+            <button id="submitTestBtn" class="primary">Corregir</button>
+          </div>
+          <div id="questionList"></div>
+        </section>
+
+        <section id="resultPanel" class="panel hidden">
+          <h2 id="resultTitle"></h2>
+          <div id="resultList" class="results"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

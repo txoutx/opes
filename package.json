@@ -1,0 +1,13 @@
+{
+  "name": "opoweb",
+  "version": "0.1.0",
+  "description": "Plataforma local de tests de oposiciones con importacion desde PDFs.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "import:pdfs": "python scripts/import_pdfs.py"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
