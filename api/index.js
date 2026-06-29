@@ -23,8 +23,17 @@ const OPPOSITIONS = [
 let sqlClient;
 let schemaReady = false;
 
+function databaseUrl() {
+  return process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    "";
+}
+
 function hasDatabase() {
-  return Boolean(process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING);
+  return Boolean(databaseUrl());
 }
 
 function canUseLocalFiles() {
@@ -33,12 +42,15 @@ function canUseLocalFiles() {
 
 function requireStorage() {
   if (!hasDatabase() && process.env.VERCEL) {
-    throw new Error("Falta configurar Vercel Postgres. Crea una base de datos Postgres y añade POSTGRES_URL al proyecto.");
+    throw new Error("Falta configurar la base de datos. Conecta Neon/Postgres y añade POSTGRES_URL o DATABASE_URL al proyecto.");
   }
 }
 
 async function sql() {
   if (!sqlClient) {
+    if (!process.env.POSTGRES_URL && databaseUrl()) {
+      process.env.POSTGRES_URL = databaseUrl();
+    }
     const mod = await import("@vercel/postgres");
     sqlClient = mod.sql;
   }
