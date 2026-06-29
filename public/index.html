@@ -14,7 +14,7 @@
           <span class="logoMark">O</span>
           <p class="eyebrow">Entrenamiento de oposiciones</p>
           <h1>OPOWEB</h1>
-          <p class="lead">Tests por oposición, simulacros de 100 preguntas y repasos automáticos de tus fallos.</p>
+          <p class="lead">Tests por oposicion, simulacros de 100 preguntas y repasos automaticos de tus fallos.</p>
           <div class="featureStrip">
             <span>20 preguntas</span>
             <span>Simulacros</span>
@@ -28,7 +28,7 @@
             <button type="button" class="tab" data-auth-mode="register">Crear cuenta</button>
           </div>
           <label>Usuario<input id="username" autocomplete="username" required></label>
-          <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+          <label>Contrasena<input id="password" type="password" autocomplete="current-password" required></label>
           <button class="primary wide" type="submit" id="authSubmit">Continuar</button>
           <p class="message" id="authMessage"></p>
         </form>
@@ -42,37 +42,46 @@
           </div>
           <div class="userbar">
             <span id="currentUser" class="userPill"></span>
+            <button id="resetProgressBtn" class="ghost danger">Reiniciar tests</button>
             <button id="logoutBtn" class="ghost">Salir</button>
           </div>
         </header>
 
-        <section class="heroPanel">
+        <section class="heroPanel introPanel">
           <div>
-            <p class="eyebrow">Banco seleccionado</p>
-            <h2 id="selectedTitle">Elige una oposición</h2>
-            <p id="selectedMeta" class="meta">Las preguntas se generan solo desde el banco que selecciones.</p>
+            <p class="eyebrow">Primer paso</p>
+            <h2>Elige una oposicion</h2>
+            <p class="meta">Cada opcion abre solo sus preguntas y sus tests numerados.</p>
           </div>
-          <label class="selectWrap">Oposición<select id="oppositionSelect"></select></label>
         </section>
 
-        <section class="quickActions">
-          <button id="startTestBtn" class="actionBtn primary">
-            <strong>Test rápido</strong>
-            <span>20 preguntas equilibradas</span>
-          </button>
-          <button id="startExamBtn" class="actionBtn">
-            <strong>Simulacro</strong>
-            <span>100 preguntas</span>
-          </button>
-          <button id="startMistakesBtn" class="actionBtn">
-            <strong>Repasar fallos</strong>
-            <span>Solo lo que necesitas reforzar</span>
-          </button>
+        <section id="oppositionMenu" class="oppositionMenu"></section>
+
+        <section id="libraryPanel" class="panel libraryPanel hidden">
+          <div class="sectionHead">
+            <div>
+              <p class="eyebrow">Tests disponibles</p>
+              <h2 id="selectedTitle">Selecciona una oposicion</h2>
+              <p id="selectedMeta" class="meta"></p>
+            </div>
+            <button id="backToOppositionsBtn" class="ghost">Cambiar oposicion</button>
+          </div>
+          <div class="libraryActions">
+            <button id="startMistakesBtn" class="actionBtn mistakesBtn">
+              <strong>Repasar fallos</strong>
+              <span>Generar test con tus errores</span>
+            </button>
+          </div>
+          <div class="testTabs">
+            <button type="button" class="tab active" data-library-mode="test">Tests 20</button>
+            <button type="button" class="tab" data-library-mode="exam">Simulacros 100</button>
+          </div>
+          <div id="testSetList" class="testSetList"></div>
         </section>
 
         <p class="toast" id="appMessage"></p>
 
-        <section class="grid">
+        <section class="dashboardGrid">
           <article class="panel">
             <div class="sectionHead">
               <h2>Evaluador</h2>
@@ -83,7 +92,7 @@
           <article class="panel">
             <div class="sectionHead">
               <h2>Actividad</h2>
-              <span class="subtle">Últimos tests</span>
+              <span class="subtle">Ultimos tests</span>
             </div>
             <div id="attemptList" class="attempts"></div>
           </article>
@@ -106,7 +115,7 @@
         <section id="resultPanel" class="panel hidden">
           <div class="sectionHead">
             <h2 id="resultTitle"></h2>
-            <button id="newTestFromResults" class="ghost">Nuevo test</button>
+            <button id="newTestFromResults" class="ghost">Volver a tests</button>
           </div>
           <div id="resultList" class="results"></div>
         </section>

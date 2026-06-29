@@ -76,6 +76,11 @@ button:disabled {
   background: transparent;
 }
 
+.danger {
+  border-color: rgba(255, 107, 107, .42);
+  color: #ffd6d6;
+}
+
 .wide {
   width: 100%;
 }
@@ -305,6 +310,91 @@ select:focus {
   margin-bottom: 14px;
 }
 
+.oppositionMenu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.oppositionCard {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 10px;
+  min-height: 138px;
+  padding: 18px;
+  text-align: left;
+  background: linear-gradient(180deg, rgba(18, 26, 40, .96), rgba(8, 13, 22, .92));
+}
+
+.oppositionCard strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.oppositionCard span:last-child {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cardKicker {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.libraryPanel {
+  margin-bottom: 18px;
+}
+
+.libraryActions {
+  margin: 18px 0 14px;
+}
+
+.mistakesBtn {
+  width: min(100%, 360px);
+  min-height: 76px;
+  border-color: rgba(246, 199, 95, .54);
+}
+
+.testTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 180px));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.testSetList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 10px;
+}
+
+.testSetBtn {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  min-height: 88px;
+  padding: 12px;
+  text-align: left;
+  background: rgba(5, 9, 15, .5);
+}
+
+.testSetBtn span,
+.testSetBtn small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.testSetBtn strong {
+  color: var(--accent);
+  font-size: 28px;
+  line-height: 1;
+}
+
 .actionBtn {
   display: grid;
   justify-items: start;
@@ -335,7 +425,8 @@ select:focus {
   font-weight: 800;
 }
 
-.grid {
+.grid,
+.dashboardGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
   gap: 18px;
@@ -449,6 +540,7 @@ select:focus {
 @media (max-width: 900px) {
   .auth,
   .grid,
+  .dashboardGrid,
   .quickActions {
     grid-template-columns: 1fr;
   }
@@ -473,6 +565,10 @@ select:focus {
   .userbar,
   .testActions {
     justify-content: space-between;
+  }
+
+  .testTabs {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

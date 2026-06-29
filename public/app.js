@@ -2,6 +2,9 @@ const state = {
   token: localStorage.getItem("opoweb_token"),
   user: null,
   oppositions: [],
+  selectedOppositionId: null,
+  testSets: [],
+  libraryMode: "test",
   currentAttemptId: null,
   currentQuestions: [],
   authMode: "login",
@@ -30,14 +33,14 @@ function setAuthMode(mode) {
 
 async function init() {
   document.querySelectorAll("[data-auth-mode]").forEach(btn => btn.addEventListener("click", () => setAuthMode(btn.dataset.authMode)));
+  document.querySelectorAll("[data-library-mode]").forEach(btn => btn.addEventListener("click", () => setLibraryMode(btn.dataset.libraryMode)));
   $("#authForm").addEventListener("submit", submitAuth);
   $("#logoutBtn").addEventListener("click", logout);
-  $("#oppositionSelect").addEventListener("change", updateSelectedOpposition);
-  $("#startTestBtn").addEventListener("click", () => startTest("test"));
-  $("#startExamBtn").addEventListener("click", () => startTest("exam"));
+  $("#resetProgressBtn").addEventListener("click", resetProgress);
+  $("#backToOppositionsBtn").addEventListener("click", showOppositionPicker);
   $("#startMistakesBtn").addEventListener("click", startMistakes);
   $("#submitTestBtn").addEventListener("click", submitTest);
-  $("#newTestFromResults").addEventListener("click", () => startTest("test"));
+  $("#newTestFromResults").addEventListener("click", showLibrary);
 
   if (state.token) {
     try {
@@ -51,9 +54,12 @@ async function init() {
 
 function setBusy(isBusy, text = "") {
   state.busy = isBusy;
-  ["authSubmit", "startTestBtn", "startExamBtn", "startMistakesBtn", "submitTestBtn", "newTestFromResults"].forEach(id => {
+  ["authSubmit", "resetProgressBtn", "startMistakesBtn", "submitTestBtn", "newTestFromResults", "backToOppositionsBtn"].forEach(id => {
     const el = $(`#${id}`);
     if (el) el.disabled = isBusy;
+  });
+  document.querySelectorAll(".oppositionCard, .testSetBtn, [data-library-mode]").forEach(el => {
+    el.disabled = isBusy;
   });
   if (text) setMessage(text, false);
 }
@@ -91,8 +97,8 @@ async function showApp() {
   $("#currentUser").textContent = state.user.username;
   const data = await api("/api/oppositions");
   state.oppositions = data.oppositions;
-  $("#oppositionSelect").innerHTML = data.oppositions.map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${o.questions})</option>`).join("");
-  updateSelectedOpposition();
+  renderOppositionMenu();
+  showOppositionPicker();
   await refreshDashboard();
 }
 
@@ -100,17 +106,92 @@ function logout() {
   localStorage.removeItem("opoweb_token");
   state.token = null;
   state.user = null;
+  state.selectedOppositionId = null;
   state.currentAttemptId = null;
   state.currentQuestions = [];
   $("#appView").classList.add("hidden");
   $("#authView").classList.remove("hidden");
 }
 
-function updateSelectedOpposition() {
-  const selected = state.oppositions.find(o => o.id === $("#oppositionSelect").value);
-  if (!selected) return;
-  $("#selectedTitle").textContent = selected.name;
-  $("#selectedMeta").textContent = `${selected.questions} preguntas disponibles. Los tests salen solo de este banco.`;
+function renderOppositionMenu() {
+  $("#oppositionMenu").innerHTML = state.oppositions.map(o => `
+    <button class="oppositionCard" data-opposition-id="${escapeHtml(o.id)}">
+      <span class="cardKicker">${escapeHtml(o.questions)} preguntas</span>
+      <strong>${escapeHtml(o.name)}</strong>
+      <span>Ver tests numerados</span>
+    </button>
+  `).join("");
+  document.querySelectorAll(".oppositionCard").forEach(btn => {
+    btn.addEventListener("click", () => selectOpposition(btn.dataset.oppositionId));
+  });
+}
+
+async function selectOpposition(oppositionId) {
+  state.selectedOppositionId = oppositionId;
+  setBusy(true, "Cargando tests...");
+  try {
+    const selected = currentOpposition();
+    const data = await api(`/api/test-sets?oppositionId=${encodeURIComponent(oppositionId)}`);
+    state.testSets = data.sets;
+    $("#selectedTitle").textContent = selected.name;
+    $("#selectedMeta").textContent = `${selected.questions} preguntas. ${countSets("test")} tests de 20 y ${countSets("exam")} simulacros de 100.`;
+    showLibrary();
+    renderTestSets();
+    setMessage("");
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function currentOpposition() {
+  return state.oppositions.find(o => o.id === state.selectedOppositionId) || state.oppositions[0] || {};
+}
+
+function countSets(mode) {
+  return state.testSets.filter(set => set.mode === mode).length;
+}
+
+function showOppositionPicker() {
+  $("#oppositionMenu").classList.remove("hidden");
+  $("#libraryPanel").classList.add("hidden");
+  $("#testPanel").classList.add("hidden");
+  $("#resultPanel").classList.add("hidden");
+}
+
+function showLibrary() {
+  $("#oppositionMenu").classList.add("hidden");
+  $("#libraryPanel").classList.remove("hidden");
+  $("#testPanel").classList.add("hidden");
+  $("#resultPanel").classList.add("hidden");
+  if (state.selectedOppositionId) renderTestSets();
+}
+
+function setLibraryMode(mode) {
+  state.libraryMode = mode;
+  document.querySelectorAll("[data-library-mode]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.libraryMode === mode);
+  });
+  renderTestSets();
+}
+
+function renderTestSets() {
+  const sets = state.testSets.filter(set => set.mode === state.libraryMode);
+  if (!sets.length) {
+    $("#testSetList").innerHTML = `<div class="emptyState">No hay tests preparados para esta opcion.</div>`;
+    return;
+  }
+  $("#testSetList").innerHTML = sets.map(set => `
+    <button class="testSetBtn" data-set-id="${escapeHtml(set.id)}">
+      <span>${set.mode === "exam" ? "Simulacro" : "Test"}</span>
+      <strong>${String(set.number).padStart(2, "0")}</strong>
+      <small>${set.count} preguntas</small>
+    </button>
+  `).join("");
+  document.querySelectorAll(".testSetBtn").forEach(btn => {
+    btn.addEventListener("click", () => startPreset(btn.dataset.setId));
+  });
 }
 
 async function refreshDashboard() {
@@ -121,7 +202,7 @@ async function refreshDashboard() {
 
 function renderStats(topics) {
   if (!topics.length) {
-    $("#statsList").innerHTML = `<div class="emptyState">Haz un test y corrígelo para ver tus porcentajes por tema.</div>`;
+    $("#statsList").innerHTML = `<div class="emptyState">Haz un test y corrigelo para ver tus porcentajes por tema.</div>`;
     return;
   }
   $("#statsList").innerHTML = topics.map(t => `
@@ -136,7 +217,7 @@ function renderStats(topics) {
 
 function renderAttempts(attempts) {
   if (!attempts.length) {
-    $("#attemptList").innerHTML = `<div class="emptyState">Tus últimos resultados aparecerán aquí.</div>`;
+    $("#attemptList").innerHTML = `<div class="emptyState">Tus ultimos resultados apareceran aqui.</div>`;
     return;
   }
   $("#attemptList").innerHTML = attempts.map(a => `
@@ -148,14 +229,15 @@ function renderAttempts(attempts) {
   `).join("");
 }
 
-async function startTest(mode) {
-  setBusy(true, mode === "exam" ? "Preparando simulacro..." : "Preparando test...");
+async function startPreset(setId) {
+  setBusy(true, "Abriendo test...");
   try {
     const data = await api("/api/tests", {
       method: "POST",
-      body: JSON.stringify({ oppositionId: $("#oppositionSelect").value, mode })
+      body: JSON.stringify({ oppositionId: state.selectedOppositionId, setId })
     });
-    renderTest(data, mode);
+    const set = state.testSets.find(item => item.id === setId);
+    renderTest(data, set?.mode || "test", set?.title || "");
     setMessage("");
   } catch (error) {
     setMessage(error.message);
@@ -165,13 +247,14 @@ async function startTest(mode) {
 }
 
 async function startMistakes() {
+  if (!state.selectedOppositionId) return;
   setBusy(true, "Buscando tus fallos...");
   try {
     const data = await api("/api/tests/mistakes", {
       method: "POST",
-      body: JSON.stringify({ oppositionId: $("#oppositionSelect").value })
+      body: JSON.stringify({ oppositionId: state.selectedOppositionId })
     });
-    renderTest(data, "mistakes");
+    renderTest(data, "mistakes", "Repaso de fallos");
     setMessage("");
   } catch (error) {
     setMessage(error.message);
@@ -180,13 +263,14 @@ async function startMistakes() {
   }
 }
 
-function renderTest(data, mode) {
+function renderTest(data, mode, title = "") {
   state.currentAttemptId = data.attemptId;
   state.currentQuestions = data.questions;
+  $("#libraryPanel").classList.add("hidden");
   $("#resultPanel").classList.add("hidden");
   $("#testPanel").classList.remove("hidden");
   $("#testMode").textContent = modeLabel(mode);
-  $("#testTitle").textContent = `${labelForOpposition($("#oppositionSelect").value)} - ${data.questions.length} preguntas`;
+  $("#testTitle").textContent = `${title || modeLabel(mode)} - ${labelForOpposition(state.selectedOppositionId)} - ${data.questions.length} preguntas`;
   $("#answeredCount").textContent = `0/${data.questions.length} respondidas`;
   $("#questionList").innerHTML = data.questions.map((q, index) => `
     <article class="question">
@@ -202,7 +286,6 @@ function renderTest(data, mode) {
       </div>
     </article>
   `).join("");
-  $("#questionList").addEventListener("change", updateAnsweredCount, { once: true });
   document.querySelectorAll("#questionList input[type='radio']").forEach(input => input.addEventListener("change", updateAnsweredCount));
   window.scrollTo({ top: $("#testPanel").offsetTop - 12, behavior: "smooth" });
 }
@@ -247,6 +330,23 @@ function renderResults(data) {
     </div>
   `).join("");
   window.scrollTo({ top: $("#resultPanel").offsetTop - 12, behavior: "smooth" });
+}
+
+async function resetProgress() {
+  if (!confirm("Esto borrara tus resultados, fallos y actividad. Empezaras de cero. Continuar?")) return;
+  setBusy(true, "Reiniciando...");
+  try {
+    await api("/api/me/progress", { method: "DELETE" });
+    state.currentAttemptId = null;
+    state.currentQuestions = [];
+    await refreshDashboard();
+    showOppositionPicker();
+    setMessage("Progreso reiniciado. Ya puedes empezar desde cero.", false);
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    setBusy(false);
+  }
 }
 
 function formatAnswer(key, options) {

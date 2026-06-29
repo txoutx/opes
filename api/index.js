@@ -6,6 +6,7 @@ const ROOT = path.join(__dirname, "..");
 const DATA_DIR = path.join(ROOT, "data");
 const FILES = {
   questions: path.join(DATA_DIR, "questions.json"),
+  testSets: path.join(DATA_DIR, "test_sets.json"),
   users: path.join(DATA_DIR, "users.json"),
   attempts: path.join(DATA_DIR, "attempts.json")
 };
@@ -89,6 +90,7 @@ async function ensureSchema() {
 function ensureLocalFiles() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(FILES.questions)) writeJson(FILES.questions, { importedAt: null, banks: [], questions: [] });
+  if (!fs.existsSync(FILES.testSets)) writeJson(FILES.testSets, { generatedAt: null, oppositions: [] });
   if (canUseLocalFiles()) {
     if (!fs.existsSync(FILES.users)) writeJson(FILES.users, []);
     if (!fs.existsSync(FILES.attempts)) writeJson(FILES.attempts, []);
@@ -105,6 +107,10 @@ function writeJson(file, value) {
 
 function questionsData() {
   return readJson(FILES.questions);
+}
+
+function testSetsData() {
+  return readJson(FILES.testSets);
 }
 
 function send(res, status, body, headers = {}) {
@@ -286,6 +292,18 @@ async function completeAttempt(attempt) {
   writeJson(FILES.attempts, attempts);
 }
 
+async function resetAttempts(userId) {
+  requireStorage();
+  await ensureSchema();
+  if (hasDatabase()) {
+    const db = await sql();
+    await db`delete from opoweb_attempts where user_id = ${userId}`;
+    return;
+  }
+  const attempts = readJson(FILES.attempts).filter(a => a.userId !== userId);
+  writeJson(FILES.attempts, attempts);
+}
+
 async function currentUser(req) {
   const auth = req.headers.authorization || "";
   const raw = auth.startsWith("Bearer ") ? auth.slice(7) : "";
@@ -393,6 +411,27 @@ async function generateQuestions(userId, oppositionId, count, onlyWrong = false)
   }));
 }
 
+function publicQuestionsByIds(questionIds) {
+  const questionMap = new Map(questionsData().questions.map(q => [q.id, q]));
+  return questionIds
+    .map(id => questionMap.get(id))
+    .filter(Boolean)
+    .map(q => ({
+      id: q.id,
+      sourceNumber: q.sourceNumber,
+      bankId: q.bankId,
+      bankName: q.bankName,
+      topic: q.topic,
+      prompt: q.prompt,
+      options: q.options
+    }));
+}
+
+function setsForOpposition(oppositionId) {
+  const data = testSetsData();
+  return (data.oppositions || []).find(o => o.id === oppositionId)?.sets || [];
+}
+
 async function handler(req, res) {
   ensureLocalFiles();
   const urlPath = normalizePath(req);
@@ -441,25 +480,49 @@ async function handler(req, res) {
       return send(res, 200, { stats, attempts: attempts.slice(-12).reverse() });
     }
 
+    if (req.method === "DELETE" && urlPath === "/api/me/progress") {
+      const user = await requireUser(req, res);
+      if (!user) return;
+      await resetAttempts(user.id);
+      return send(res, 200, { ok: true });
+    }
+
+    if (req.method === "GET" && urlPath === "/api/test-sets") {
+      const parsed = new URL(req.url, "http://localhost");
+      const oppositionId = String(parsed.searchParams.get("oppositionId") || OPPOSITIONS[0].id);
+      const sets = setsForOpposition(oppositionId).map(set => ({
+        id: set.id,
+        number: set.number,
+        mode: set.mode,
+        title: set.title,
+        count: set.questionIds.length
+      }));
+      return send(res, 200, { oppositionId, sets });
+    }
+
     if (req.method === "POST" && urlPath === "/api/tests") {
       const user = await requireUser(req, res);
       if (!user) return;
       const body = await parseBody(req);
       const oppositionId = String(body.oppositionId || OPPOSITIONS[0].id);
-      const mode = body.mode === "exam" ? "exam" : "test";
+      const requestedSet = String(body.setId || "");
+      const preset = setsForOpposition(oppositionId).find(set => set.id === requestedSet);
+      const mode = preset ? preset.mode : (body.mode === "exam" ? "exam" : "test");
       const count = mode === "exam" ? 100 : 20;
-      const questions = await generateQuestions(user.id, oppositionId, count, false);
+      const questions = preset ? publicQuestionsByIds(preset.questionIds) : await generateQuestions(user.id, oppositionId, count, false);
       if (!questions.length) return send(res, 404, { error: "No hay preguntas importadas para esta oposicion." });
       const attempt = {
         id: crypto.randomUUID(),
         userId: user.id,
         oppositionId,
         mode,
+        setId: preset?.id || null,
+        setTitle: preset?.title || null,
         createdAt: new Date().toISOString(),
         questionIds: questions.map(q => q.id)
       };
       await saveAttempt(attempt);
-      return send(res, 201, { attemptId: attempt.id, questions });
+      return send(res, 201, { attemptId: attempt.id, setTitle: attempt.setTitle, questions });
     }
 
     if (req.method === "POST" && urlPath === "/api/tests/mistakes") {
