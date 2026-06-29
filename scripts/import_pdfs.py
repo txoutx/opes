@@ -74,7 +74,17 @@ def infer_topic(prompt):
     clean = normalize(prompt)
     if "." in clean[:90]:
         candidate = clean.split(".", 1)[0]
-        if 4 <= len(candidate) <= 80 and not candidate.startswith(("¿", "Que", "Qué", "Cuál", "Cual")):
+        rejected_starts = (
+            "¿", "Que", "Qué", "Cuál", "Cual", "Se ", "En ", "El ", "La ", "Los ", "Las ",
+            "Un ", "Una ", "Si ", "-", "Calcule", "Teniendo", "Aunque", "Identifica", "De acuerdo"
+        )
+        looks_like_heading = (
+            4 <= len(candidate) <= 80
+            and not candidate.startswith(rejected_starts)
+            and not re.search(r"\d|€|/|:", candidate)
+            and re.search(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", candidate)
+        )
+        if looks_like_heading:
             return candidate
     return "General"
 
@@ -93,13 +103,14 @@ def as_question(bank, number, prompt, options, correct):
     prompt = normalize(prompt)
     if len(prompt) < 12:
         return None
+    topic = infer_topic(prompt)
     return {
         "id": question_id(bank["id"], number, prompt),
         "bankId": bank["id"],
         "bankName": bank["name"],
         "sourceFile": bank["file"],
         "sourceNumber": number,
-        "topic": infer_topic(prompt),
+        "topic": topic if topic != "General" else bank["name"],
         "prompt": prompt,
         "options": options,
         "correctAnswer": correct,
