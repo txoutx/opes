@@ -98,7 +98,7 @@ function ensureLocalFiles() {
 }
 
 function readJson(file) {
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
 }
 
 function writeJson(file, value) {
