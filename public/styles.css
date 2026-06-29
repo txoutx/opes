@@ -354,10 +354,54 @@ select:focus {
   margin: 18px 0 14px;
 }
 
-.mistakesBtn {
-  width: min(100%, 360px);
-  min-height: 76px;
+.mistakeBox {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(246, 199, 95, .35);
+  border-radius: 10px;
+  background: rgba(246, 199, 95, .055);
+}
+
+.mistakeBox > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.mistakeBox strong {
+  color: var(--ink);
+}
+
+.mistakeBox span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.mistakeTopicList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.mistakeTopicBtn {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  min-height: 78px;
+  padding: 12px;
+  text-align: left;
   border-color: rgba(246, 199, 95, .54);
+  background: rgba(5, 9, 15, .46);
+}
+
+.mistakeTopicBtn strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.compact {
+  padding: 12px;
 }
 
 .testTabs {

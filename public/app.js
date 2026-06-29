@@ -4,6 +4,7 @@ const state = {
   oppositions: [],
   selectedOppositionId: null,
   testSets: [],
+  mistakeTopics: [],
   libraryMode: "test",
   currentAttemptId: null,
   currentQuestions: [],
@@ -38,7 +39,6 @@ async function init() {
   $("#logoutBtn").addEventListener("click", logout);
   $("#resetProgressBtn").addEventListener("click", resetProgress);
   $("#backToOppositionsBtn").addEventListener("click", showOppositionPicker);
-  $("#startMistakesBtn").addEventListener("click", startMistakes);
   $("#submitTestBtn").addEventListener("click", submitTest);
   $("#newTestFromResults").addEventListener("click", showLibrary);
 
@@ -54,11 +54,11 @@ async function init() {
 
 function setBusy(isBusy, text = "") {
   state.busy = isBusy;
-  ["authSubmit", "resetProgressBtn", "startMistakesBtn", "submitTestBtn", "newTestFromResults", "backToOppositionsBtn"].forEach(id => {
+  ["authSubmit", "resetProgressBtn", "submitTestBtn", "newTestFromResults", "backToOppositionsBtn"].forEach(id => {
     const el = $(`#${id}`);
     if (el) el.disabled = isBusy;
   });
-  document.querySelectorAll(".oppositionCard, .testSetBtn, [data-library-mode]").forEach(el => {
+  document.querySelectorAll(".oppositionCard, .testSetBtn, .mistakeTopicBtn, [data-library-mode]").forEach(el => {
     el.disabled = isBusy;
   });
   if (text) setMessage(text, false);
@@ -137,6 +137,7 @@ async function selectOpposition(oppositionId) {
     $("#selectedMeta").textContent = `${selected.questions} preguntas. ${countSets("test")} tests de 20 y ${countSets("exam")} simulacros de 100.`;
     showLibrary();
     renderTestSets();
+    renderMistakeTopics();
     setMessage("");
   } catch (error) {
     setMessage(error.message);
@@ -196,8 +197,10 @@ function renderTestSets() {
 
 async function refreshDashboard() {
   const data = await api("/api/dashboard");
+  state.mistakeTopics = data.stats.mistakeTopics || [];
   renderStats(data.stats.topics);
   renderAttempts(data.attempts);
+  renderMistakeTopics();
 }
 
 function renderStats(topics) {
@@ -246,15 +249,38 @@ async function startPreset(setId) {
   }
 }
 
-async function startMistakes() {
+function renderMistakeTopics() {
+  const container = $("#mistakeTopicList");
+  if (!container) return;
+  if (!state.selectedOppositionId) {
+    container.innerHTML = `<div class="emptyState compact">Elige una oposicion para ver sus fallos.</div>`;
+    return;
+  }
+  const topics = state.mistakeTopics.filter(t => t.oppositionId === state.selectedOppositionId && t.questions > 0);
+  if (!topics.length) {
+    container.innerHTML = `<div class="emptyState compact">Todavia no hay fallos en esta oposicion.</div>`;
+    return;
+  }
+  container.innerHTML = topics.map(t => `
+    <button class="mistakeTopicBtn" data-topic="${escapeHtml(t.topic)}">
+      <strong>${escapeHtml(t.topic)}</strong>
+      <span>${t.questions} preguntas falladas - ${t.wrong} fallos</span>
+    </button>
+  `).join("");
+  document.querySelectorAll(".mistakeTopicBtn").forEach(btn => {
+    btn.addEventListener("click", () => startMistakes(btn.dataset.topic));
+  });
+}
+
+async function startMistakes(topic) {
   if (!state.selectedOppositionId) return;
   setBusy(true, "Buscando tus fallos...");
   try {
     const data = await api("/api/tests/mistakes", {
       method: "POST",
-      body: JSON.stringify({ oppositionId: state.selectedOppositionId })
+      body: JSON.stringify({ oppositionId: state.selectedOppositionId, topic })
     });
-    renderTest(data, "mistakes", "Repaso de fallos");
+    renderTest(data, "mistakes", `Fallos - ${topic}`);
     setMessage("");
   } catch (error) {
     setMessage(error.message);

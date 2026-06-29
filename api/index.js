@@ -337,12 +337,14 @@ async function userStats(userId) {
   const attempts = (await getAttempts(userId)).filter(a => a.completedAt);
   const byTopic = new Map();
   const wrong = new Map();
+  const wrongByTopic = new Map();
   for (const attempt of attempts) {
     for (const result of attempt.results || []) {
-      const key = `${result.oppositionId}||${result.topic || "Sin tema"}`;
+      const topic = result.topic || "Sin tema";
+      const key = `${result.oppositionId}||${topic}`;
       const entry = byTopic.get(key) || {
         oppositionId: result.oppositionId,
-        topic: result.topic || "Sin tema",
+        topic,
         total: 0,
         correct: 0,
         wrong: 0
@@ -352,16 +354,32 @@ async function userStats(userId) {
       else {
         entry.wrong += 1;
         wrong.set(result.questionId, (wrong.get(result.questionId) || 0) + 1);
+        const wrongTopic = wrongByTopic.get(key) || {
+          oppositionId: result.oppositionId,
+          topic,
+          wrong: 0,
+          questionIds: new Map()
+        };
+        wrongTopic.wrong += 1;
+        wrongTopic.questionIds.set(result.questionId, (wrongTopic.questionIds.get(result.questionId) || 0) + 1);
+        wrongByTopic.set(key, wrongTopic);
       }
       byTopic.set(key, entry);
     }
   }
+  const mistakeTopics = [...wrongByTopic.values()].map(t => ({
+    oppositionId: t.oppositionId,
+    topic: t.topic,
+    wrong: t.wrong,
+    questions: t.questionIds.size
+  })).sort((a, b) => a.oppositionId.localeCompare(b.oppositionId) || b.wrong - a.wrong || a.topic.localeCompare(b.topic));
   return {
     topics: [...byTopic.values()].map(t => ({
       ...t,
       successRate: t.total ? Math.round((t.correct / t.total) * 100) : 0,
       failRate: t.total ? Math.round((t.wrong / t.total) * 100) : 0
     })).sort((a, b) => a.oppositionId.localeCompare(b.oppositionId) || a.topic.localeCompare(b.topic)),
+    mistakeTopics,
     wrongQuestionIds: [...wrong.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
   };
 }
@@ -373,11 +391,12 @@ async function recentQuestionIds(userId) {
   return new Set(attempts.flatMap(a => a.questionIds || []));
 }
 
-async function generateQuestions(userId, oppositionId, count, onlyWrong = false) {
+async function generateQuestions(userId, oppositionId, count, onlyWrong = false, topicFilter = "") {
   const all = availableQuestions(oppositionId);
   const stats = await userStats(userId);
   const recent = await recentQuestionIds(userId);
   let pool = onlyWrong ? all.filter(q => stats.wrongQuestionIds.includes(q.id)) : all;
+  if (topicFilter) pool = pool.filter(q => (q.topic || "Sin tema") === topicFilter);
   if (!pool.length) pool = onlyWrong ? [] : all;
 
   const byTopic = new Map();
@@ -530,18 +549,20 @@ async function handler(req, res) {
       if (!user) return;
       const body = await parseBody(req);
       const oppositionId = String(body.oppositionId || OPPOSITIONS[0].id);
-      const questions = await generateQuestions(user.id, oppositionId, 20, true);
+      const topic = String(body.topic || "");
+      const questions = await generateQuestions(user.id, oppositionId, 20, true, topic);
       if (!questions.length) return send(res, 404, { error: "Todavia no hay fallos para crear un test especifico." });
       const attempt = {
         id: crypto.randomUUID(),
         userId: user.id,
         oppositionId,
         mode: "mistakes",
+        topic,
         createdAt: new Date().toISOString(),
         questionIds: questions.map(q => q.id)
       };
       await saveAttempt(attempt);
-      return send(res, 201, { attemptId: attempt.id, questions });
+      return send(res, 201, { attemptId: attempt.id, topic, questions });
     }
 
     const submitMatch = urlPath.match(/^\/api\/tests\/([^/]+)\/submit$/);

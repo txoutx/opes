@@ -67,10 +67,13 @@
             <button id="backToOppositionsBtn" class="ghost">Cambiar oposicion</button>
           </div>
           <div class="libraryActions">
-            <button id="startMistakesBtn" class="actionBtn mistakesBtn">
-              <strong>Repasar fallos</strong>
-              <span>Generar test con tus errores</span>
-            </button>
+            <div class="mistakeBox">
+              <div>
+                <strong>Repasar fallos por tema</strong>
+                <span>Elige un tema concreto para no mezclar errores.</span>
+              </div>
+              <div id="mistakeTopicList" class="mistakeTopicList"></div>
+            </div>
           </div>
           <div class="testTabs">
             <button type="button" class="tab active" data-library-mode="test">Tests 20</button>
