@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "dev": "node server.js",
     "import:pdfs": "python scripts/import_pdfs.py"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0"
   },
   "engines": {
     "node": ">=20"

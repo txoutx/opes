@@ -3,25 +3,33 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#070b12">
     <title>OPOWEB</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
     <main class="shell">
       <section class="auth" id="authView">
-        <div>
-          <p class="eyebrow">Oposiciones Osakidetza</p>
+        <div class="brand">
+          <span class="logoMark">O</span>
+          <p class="eyebrow">Entrenamiento de oposiciones</p>
           <h1>OPOWEB</h1>
-          <p class="lead">Tests de 20 preguntas, simulacros de 100 y repaso automatico de fallos por usuario.</p>
+          <p class="lead">Tests por oposición, simulacros de 100 preguntas y repasos automáticos de tus fallos.</p>
+          <div class="featureStrip">
+            <span>20 preguntas</span>
+            <span>Simulacros</span>
+            <span>Fallos personalizados</span>
+          </div>
         </div>
-        <form id="authForm" class="panel">
-          <div class="tabs">
+
+        <form id="authForm" class="panel authCard">
+          <div class="tabs" role="tablist">
             <button type="button" class="tab active" data-auth-mode="login">Entrar</button>
-            <button type="button" class="tab" data-auth-mode="register">Registrarse</button>
+            <button type="button" class="tab" data-auth-mode="register">Crear cuenta</button>
           </div>
           <label>Usuario<input id="username" autocomplete="username" required></label>
-          <label>Contrasena<input id="password" type="password" autocomplete="current-password" required></label>
-          <button class="primary" type="submit">Continuar</button>
+          <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+          <button class="primary wide" type="submit" id="authSubmit">Continuar</button>
           <p class="message" id="authMessage"></p>
         </form>
       </section>
@@ -29,31 +37,54 @@
       <section class="app hidden" id="appView">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Panel de entrenamiento</p>
+            <p class="eyebrow">Panel personal</p>
             <h1>OPOWEB</h1>
           </div>
           <div class="userbar">
-            <span id="currentUser"></span>
+            <span id="currentUser" class="userPill"></span>
             <button id="logoutBtn" class="ghost">Salir</button>
           </div>
         </header>
 
-        <section class="controls">
-          <label>Oposicion<select id="oppositionSelect"></select></label>
-          <div class="actions">
-            <button id="startTestBtn" class="primary">Test 20</button>
-            <button id="startExamBtn">Simulacro 100</button>
-            <button id="startMistakesBtn">Test de fallos</button>
+        <section class="heroPanel">
+          <div>
+            <p class="eyebrow">Banco seleccionado</p>
+            <h2 id="selectedTitle">Elige una oposición</h2>
+            <p id="selectedMeta" class="meta">Las preguntas se generan solo desde el banco que selecciones.</p>
           </div>
+          <label class="selectWrap">Oposición<select id="oppositionSelect"></select></label>
         </section>
+
+        <section class="quickActions">
+          <button id="startTestBtn" class="actionBtn primary">
+            <strong>Test rápido</strong>
+            <span>20 preguntas equilibradas</span>
+          </button>
+          <button id="startExamBtn" class="actionBtn">
+            <strong>Simulacro</strong>
+            <span>100 preguntas</span>
+          </button>
+          <button id="startMistakesBtn" class="actionBtn">
+            <strong>Repasar fallos</strong>
+            <span>Solo lo que necesitas reforzar</span>
+          </button>
+        </section>
+
+        <p class="toast" id="appMessage"></p>
 
         <section class="grid">
           <article class="panel">
-            <h2>Evaluador por tema</h2>
+            <div class="sectionHead">
+              <h2>Evaluador</h2>
+              <span class="subtle">Por tema</span>
+            </div>
             <div id="statsList" class="stats"></div>
           </article>
           <article class="panel">
-            <h2>Ultimos resultados</h2>
+            <div class="sectionHead">
+              <h2>Actividad</h2>
+              <span class="subtle">Últimos tests</span>
+            </div>
             <div id="attemptList" class="attempts"></div>
           </article>
         </section>
@@ -64,13 +95,19 @@
               <p class="eyebrow" id="testMode"></p>
               <h2 id="testTitle">Test</h2>
             </div>
-            <button id="submitTestBtn" class="primary">Corregir</button>
+            <div class="testActions">
+              <span id="answeredCount" class="counter">0 respondidas</span>
+              <button id="submitTestBtn" class="primary">Corregir</button>
+            </div>
           </div>
           <div id="questionList"></div>
         </section>
 
         <section id="resultPanel" class="panel hidden">
-          <h2 id="resultTitle"></h2>
+          <div class="sectionHead">
+            <h2 id="resultTitle"></h2>
+            <button id="newTestFromResults" class="ghost">Nuevo test</button>
+          </div>
           <div id="resultList" class="results"></div>
         </section>
       </section>
