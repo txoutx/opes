@@ -441,6 +441,20 @@ select:focus {
   line-height: 1;
 }
 
+.testSetBtn.completed {
+  border-color: rgba(66, 217, 141, .62);
+  background: linear-gradient(180deg, rgba(66, 217, 141, .16), rgba(5, 9, 15, .58));
+}
+
+.testSetBtn.completed strong {
+  color: var(--ok);
+}
+
+.testSetBtn.completed small {
+  color: #c8f7dc;
+  font-weight: 900;
+}
+
 .actionBtn {
   display: grid;
   justify-items: start;

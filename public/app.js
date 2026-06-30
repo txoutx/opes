@@ -4,6 +4,7 @@ const state = {
   oppositions: [],
   selectedOppositionId: null,
   testSets: [],
+  completedSetIds: new Set(),
   mistakeTopics: [],
   libraryMode: "test",
   currentAttemptId: null,
@@ -184,10 +185,10 @@ function renderTestSets() {
     return;
   }
   $("#testSetList").innerHTML = sets.map(set => `
-    <button class="testSetBtn" data-set-id="${escapeHtml(set.id)}">
+    <button class="testSetBtn ${state.completedSetIds.has(set.id) ? "completed" : ""}" data-set-id="${escapeHtml(set.id)}">
       <span>${set.mode === "exam" ? "Simulacro" : "Test"}</span>
       <strong>${String(set.number).padStart(2, "0")}</strong>
-      <small>${set.count} preguntas</small>
+      <small>${state.completedSetIds.has(set.id) ? "Realizado" : `${set.count} preguntas`}</small>
     </button>
   `).join("");
   document.querySelectorAll(".testSetBtn").forEach(btn => {
@@ -198,9 +199,11 @@ function renderTestSets() {
 async function refreshDashboard() {
   const data = await api("/api/dashboard");
   state.mistakeTopics = data.stats.mistakeTopics || [];
+  state.completedSetIds = new Set(data.completedSetIds || []);
   renderStats(data.stats.topics);
   renderAttempts(data.attempts);
   renderMistakeTopics();
+  if (!$("#libraryPanel").classList.contains("hidden")) renderTestSets();
 }
 
 function renderStats(topics) {
@@ -365,6 +368,7 @@ async function resetProgress() {
     await api("/api/me/progress", { method: "DELETE" });
     state.currentAttemptId = null;
     state.currentQuestions = [];
+    state.completedSetIds = new Set();
     await refreshDashboard();
     showOppositionPicker();
     setMessage("Progreso reiniciado. Ya puedes empezar desde cero.", false);

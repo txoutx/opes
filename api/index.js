@@ -451,6 +451,21 @@ function setsForOpposition(oppositionId) {
   return (data.oppositions || []).find(o => o.id === oppositionId)?.sets || [];
 }
 
+function sameQuestionIds(left = [], right = []) {
+  if (left.length !== right.length) return false;
+  return left.every((id, index) => id === right[index]);
+}
+
+function completedSetIds(attempts) {
+  const ids = new Set();
+  for (const attempt of attempts) {
+    if (!attempt.completedAt || attempt.mode === "mistakes") continue;
+    const match = setsForOpposition(attempt.oppositionId).find(set => sameQuestionIds(attempt.questionIds || [], set.questionIds || []));
+    if (match) ids.add(match.id);
+  }
+  return [...ids];
+}
+
 async function handler(req, res) {
   ensureLocalFiles();
   const urlPath = normalizePath(req);
@@ -496,7 +511,7 @@ async function handler(req, res) {
       if (!user) return;
       const stats = await userStats(user.id);
       const attempts = (await getAttempts(user.id)).filter(a => a.completedAt);
-      return send(res, 200, { stats, attempts: attempts.slice(-12).reverse() });
+      return send(res, 200, { stats, attempts: attempts.slice(-12).reverse(), completedSetIds: completedSetIds(attempts) });
     }
 
     if (req.method === "DELETE" && urlPath === "/api/me/progress") {
